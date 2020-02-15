@@ -51,7 +51,7 @@ export class UberEstimateController {
                 const airports = body[3][0];
                 const cheapestFlight = flights[0][0][4];
                 const lastCheapestFlight = cheapestFlight[cheapestFlight.length - 1];
-                const cheapestStart = airports.find(airport => airport[0] === lastCheapestFlight[0]);
+                const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0][0]);
                 const cheapestEnd = airports.find(airport => airport[0] === lastCheapestFlight[1]);
                 console.log(endAirport, [cheapestFlight[0][11], cheapestFlight[0][12]], [lastCheapestFlight[11], lastCheapestFlight[12]]);
                 return {
@@ -79,7 +79,7 @@ export class UberEstimateController {
         data.append('client_id', 'mtyykAhi40A_eQ0pUiR7x_lVfZSmZSaO');
         data.append('grant_type', 'authorization_code');
         data.append('redirect_uri', 'http://localhost:3000/uber-auth');
-        data.append('scope', 'profile');
+        data.append('scope', 'request');
         data.append('code', code);
         // this.httpService.post<TokenResponse>(
         //     'https://login.uber.com/oauth/v2/token',
@@ -104,6 +104,7 @@ export class UberEstimateController {
             'body': data,
             'method': 'POST'
         }).then(response => response.json()).then(response => {
+            console.log(response)
             console.log(response.access_token);
             this.token = response.access_token;
         })
