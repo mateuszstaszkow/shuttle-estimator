@@ -30,6 +30,7 @@ export interface DetailedAirport {
     id: string;
     name: string;
     coordinates: number[];
+    updatedPrice?: number;
 }
 
 export interface DetailedFlightAirports {

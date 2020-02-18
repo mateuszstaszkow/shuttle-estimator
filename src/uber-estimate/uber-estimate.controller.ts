@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/camelcase */
-import {BadRequestException, Body, Controller, Get, HttpService, Param, Post, Query} from '@nestjs/common';
-import {DetailedFlightAirports, EstimatesResponse, TokenResponse, UberPath} from "./uber-estimate.model";
-import {combineLatest, Observable, of} from "rxjs";
-import {catchError, map, tap} from "rxjs/operators";
+import {Body, Controller, Get, Post, Query} from '@nestjs/common';
+import {UberPath} from "./uber-estimate.model";
+import {TaxiFareRequestDto} from "./taxi-fare-request.dto";
+import {TaxiFareResponseDto} from "./taxi-fare-response.dto";
+import {TaxiFareForCityDto} from "./taxi-fare-for-city.dto";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const FormData = require('form-data');
@@ -11,62 +12,82 @@ const fetch = require('node-fetch');
 
 @Controller()
 export class UberEstimateController {
-    private token: string = 'JA.VUNmGAAAAAAAEgASAAAABwAIAAwAAAAAAAAAEgAAAAAAAAH4AAAAFAAAAAAADgAQAAQAAAAIAAwAAAAOAAAAzAAAABwAAAAEAAAAEAAAABldTdhros4CQIydGB0xwCunAAAAo7uvCqrIijtblZ_GSLSdwsA6gOgH3w3CqcUulE0UU5MzqGJDxZwrpxtXdEIPsDpz_AmGD8KhCF3aZg4PfVgxn2Fd5h8UsEtSxWvqpFN6U0sLVlZ_3' +
-        '1UBf3CAEOX7QDlpKqUx8A3-NZfkl7nybZPAFthLrAx7upba566NS4RTR-rh9_JKzAaRn6hIssI7kaaqx45q3SkawVBsZnAnSOkApDaawy2M6eIADAAAAC0764CbyLhCo5nvpSQAAABiMGQ4NTgwMy0zOGEwLTQyYjMtODA2ZS03YTRjZjhlMTk2ZWU';
+    private readonly TAXI_START_EXP = /<tr><td>Taxi Start \(Normal Tariff\) <\/td> <td style="text-align: right" class="priceValue ">(.*)&nbsp;/;
+    private readonly TAXI_RIDE_EXP = /<td style="text-align: right" class="priceValue tr_highlighted">(.*)&nbsp;/;
+    private readonly TAXI_WAIT_EXP = /<tr><td>Taxi 1hour Waiting \(Normal Tariff\) <\/td> <td style="text-align: right" class="priceValue ">(.*)&nbsp;/;
+    private token: string;
 
-    constructor(private readonly httpService: HttpService) {
-    }
-
-    // TODO: implement one way & multiweekend
+    // TODO: implement one way & multiweekend & combinations
     @Get('/detailed-flight')
     public getDetailedFlightInfo(@Query('startAirport') startAirport: string,
                                  @Query('endAirport') endAirport: string,
                                  @Query('startDate') startDate: string,
                                  @Query('endDate') endDate: string,
-                                 @Query('start_latitude') start_latitude: number,
-                                 @Query('start_longitude') start_longitude: number,
                                  @Query('startHour') startHour: number,
-                                 @Query('endHour') endHour: number): Promise<DetailedFlightAirports> {
+                                 @Query('endHour') endHour: number): Promise<any> {
         startHour = startHour || 16;
         endHour = endHour || 12;
         return fetch('https://www.google.com/async/flights/search?vet=10ahUKEwiVpOWjqMznAhVKfZoKHSluDWIQjUMIZigA..i&ei=0hdEXpXzBMr66QSp3LWQBg&hl=pl&yv=3&async=data:'
-                + encodeURI(JSON.stringify([[[[[[null, [[startAirport, 4]]], [null, [[endAirport, 4]]], [startDate]], [[null, [[endAirport, 4]]], [null, [[startAirport, 4]]], [endDate]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [[startHour, 23]], [], [], null, [], []], [null, [], [[endHour, 23]], [], [], null, [], []]]], null, 'PLN', null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
-                + ',s:s,tfg-bgr:%5B%22!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4%22%2Cnull%2Cnull%2C19%2C140%2Cnull%2Cnull%2C0%5D,_fmt:jspb', {
-                'credentials': 'include',
-                'headers': {
-                    'accept': '*/*',
-                    'accept-language': 'pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'sec-fetch-dest': 'empty',
-                    'sec-fetch-mode': 'cors',
-                    'sec-fetch-site': 'same-origin'
-                },
-                'referrer': 'https://www.google.com/',
-                'referrerPolicy': <any>'origin',
-                'body': null,
-                'method': 'GET',
-                'mode': 'cors'
-            }).then(x => x.text()).then(x => {
-                const body = JSON.parse(x.substring(4, x.length))['_r'];
-                const flights = body[2][2][0];
-                const airports = body[3][0];
-                const cheapestFlight = flights[0][0][4];
-                const lastCheapestFlight = cheapestFlight[cheapestFlight.length - 1];
-                const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0][0]);
-                const cheapestEnd = airports.find(airport => airport[0] === lastCheapestFlight[1]);
-                console.log(endAirport, [cheapestFlight[0][11], cheapestFlight[0][12]], [lastCheapestFlight[11], lastCheapestFlight[12]]);
-                return {
-                    start: {
-                        id: cheapestStart[0],
-                        name: cheapestStart[1],
-                        coordinates: [cheapestStart[12], cheapestStart[11]]
+            + encodeURI(JSON.stringify([[[[[[null, [[startAirport, 4]]], [null, [[endAirport, 4]]], [startDate]], [[null, [[endAirport, 4]]], [null, [[startAirport, 4]]], [endDate]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [[startHour, 23]], [], [], null, [], []], [null, [], [[endHour, 23]], [], [], null, [], []]]], null, 'PLN', null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
+            + ',s:s,tfg-bgr:%5B%22!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4%22%2Cnull%2Cnull%2C19%2C140%2Cnull%2Cnull%2C0%5D,_fmt:jspb', {
+            'credentials': 'include',
+            'headers': {
+                'accept': '*/*',
+                'accept-language': 'pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-origin'
+            },
+            'referrer': 'https://www.google.com/',
+            'referrerPolicy': <any>'origin',
+            'body': null,
+            'method': 'GET',
+            'mode': 'cors'
+        }).then(x => x.text()).then(x => JSON.parse(x.substring(4, x.length))['_r']);
+    }
+
+    @Post('/taxi-fare')
+    public getTaxiCostForCity(
+        @Body() fareRequest: TaxiFareRequestDto
+    ): Promise<TaxiFareResponseDto> {
+        const currency = fareRequest.currency || 'PLN';
+        const response = new TaxiFareResponseDto();
+        response.currency = currency;
+        const delayIncrement = 500;
+        let delay = 0;
+        return Promise.all(fareRequest.cities.map(city => {
+            const encodedCity = this.correctCityName(city);
+            const promise = new Promise(resolve => setTimeout(resolve, delay))
+                .then(() => fetch(`https://www.numbeo.com/taxi-fare/in/${encodedCity}?displayCurrency=${currency}`, {
+                    "credentials": "include",
+                    "headers": {
+                        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                        "accept-language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+                        "cache-control": "max-age=0",
+                        "sec-fetch-dest": "document",
+                        "sec-fetch-mode": "navigate",
+                        "sec-fetch-site": "same-origin",
+                        "sec-fetch-user": "?1",
+                        "upgrade-insecure-requests": "1"
                     },
-                    end: {
-                        id: cheapestEnd[0],
-                        name: cheapestEnd[1],
-                        coordinates: [cheapestEnd[12], cheapestEnd[11]]
-                    }
-                };
-            });
+                    "referrer": `https://www.numbeo.com/taxi-fare/in/${encodedCity}?displayCurrency=PLN`,
+                    "referrerPolicy": "no-referrer-when-downgrade",
+                    "body": null,
+                    "method": "GET",
+                    "mode": "cors"
+                })).then(response => response.text())
+                    .then(htmlResponse => {
+                        const start = this.getValueFromHtml(htmlResponse, this.TAXI_START_EXP);
+                        const ride = this.getValueFromHtml(htmlResponse, this.TAXI_RIDE_EXP);
+                        const wait = this.getValueFromHtml(htmlResponse, this.TAXI_WAIT_EXP);
+                        return { city, fare: new TaxiFareForCityDto(start, ride, wait) };
+                });
+            delay += delayIncrement;
+            return promise;
+        })).then(fares => {
+            fares.forEach(fare => response.faresByCities[fare.city] = fare.fare);
+            return response;
+        });
     }
 
     // https://login.uber.com/oauth/v2/authorize?response_type=code&client_id=_LJJG9K6XUFSSWTooUOom_B6fH-VL63I&redirect_uri=http://localhost:3000/uber-auth
@@ -81,24 +102,6 @@ export class UberEstimateController {
         data.append('redirect_uri', 'http://localhost:3000/uber-auth');
         data.append('scope', 'request');
         data.append('code', code);
-        // this.httpService.post<TokenResponse>(
-        //     'https://login.uber.com/oauth/v2/token',
-        //     // 'http://localhost:3000/uber-estimates',
-        //     {
-        //         'client_secret': 'UcJH8F5z5mjyFsD80i_DvI7f1-9jIL5Y9r5AV_2r',
-        //         'client_id': '_LJJG9K6XUFSSWTooUOom_B6fH-VL63I',
-        //         'grant_type': 'authorization_code',
-        //         'redirect_uri': 'http://localhost:3000/uber-auth',
-        //         'scope': 'profile',
-        //         'code': code
-        //     },
-        //     { method: 'POST' }
-        // ).pipe(
-        //     catchError(e => {
-        //         console.log(e);
-        //         throw new BadRequestException();
-        //     })
-        // ).subscribe(response => this.token = response.data.access_token);
 
         fetch('https://login.uber.com/oauth/v2/token', {
             'body': data,
@@ -108,78 +111,6 @@ export class UberEstimateController {
             console.log(response.access_token);
             this.token = response.access_token;
         })
-
-
-
-        // fetch("https://www.google.com/async/flights/search?vet=10ahUKEwiMsJvYnsznAhXm0aYKHZNKBHgQjUMIZigA..i&ei=ww1EXszCKOajmwWTlZHABw&hl=pl&yv=3&async=data:%5B%5B%5B%5B%5B%5Bnull%2C%5B%5B%22%2Fm%2F081m_%22%2C4%5D%5D%5D%2C%5Bnull%2C%5B%5B%22%2Fm%2F05l64%22%2C4%5D%5D%5D%2C%5B%222020-05-15%22%5D%2Cnull%5D%2C%5B%5Bnull%2C%5B%5B%22%2Fm%2F05l64%22%2C4%5D%5D%5D%2C%5Bnull%2C%5B%5B%22%2Fm%2F081m_%22%2C4%5D%5D%5D%2C%5B%222020-05-17%22%5D%2Cnull%5D%5D%2C1%2C%5B1%5D%2Cnull%2Cnull%2Cnull%2Cnull%2C1%2Cnull%2C2%2Cnull%2Cnull%2Cnull%2Cnull%2Cnull%2C0%5D%2C%5B%5B%5Bnull%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2Cnull%2C%5B%5D%2C%5B%5D%5D%2C%5Bnull%2C%5B%5D%2C%5B%5D%2C%5B%5D%2C%5B%5D%2Cnull%2C%5B%5D%2C%5B%5D%2Cnull%2Cnull%5D%5D%5D%2Cnull%2C%22PLN%22%2Cnull%2C%5B%5D%5D%2C%5B0%5D%5D,s:s,tfg-bgr:%5B%22!sLOls5JCZED7cPgiq9lYyM4383V8iV8CAAAAfFIAAAAdmQOS7fXHp6kqxQ3zlOlQWG2yZdqwHZUoMMcdki6-lxWmCPHffa3bvLRCgrIvw_nkOONMSm4vVzVjoQrQ-2W2va4QZh_V3gXK9CeOfDcFE-boQpfmSlr2ZaVFsNsOybTkQy7mxR-HrUMPkl5RcDF0eJKj3Nt05CqFY8nT7sLrnCrYKXhnHQ6x2LCO6C9ckEiXbSC6YYAYZMzpv_Hx2ZZf75AYZ_MZIZhzqWFz-lmUIy1Fm56yG5AmHOZLPKClT4DPMsjUGOQE8jyDDSmEkxkABmSv6BRRLeJaU1ACPOw7Y1_kDLgjgYx-dGJtlMvxGKH9cWJMUlEFJyYQqt_4fAtlaCHKfw9OZIw9G78DZGAUFrzOLEe_poGWMWr0sGroBIGM8Eq7fdnyi22K2JDYT9SJAd8NUcBYpAbBrlBJqd0t9icvYw8naKl6NJYt2WWD1KjudriJXBMmAYP0z6SR_pUe5t6UAw3buH-Sl3A_A7V1AJAyn90NDP21zvlECxYrQ6mewDLUECo6xDkvQfmPCpBjo2lJuOUrETH6H8mZc87qSf5LACe1ONRr4Fay8nw4o3fWfbdJLbtvwKvd7JFRG-wmeDsKneX5anIUDFlZTtsO6srQOeO9QfoyOlT4ubx4GC7rzSbcbyRsWBTv2ukcvB-EU73Zly0gI9MMDmwPLLUNFFrJHqZcpcHzr_vsbnSgMw_eobp4v3kJMXjYWeJuUMzmUyUmSDXVJ38yjw0_JWP7FrGI3WdjK303MhNu2_1VHt7o0mj8TdWrDUtCNyxhheoRouXnDr_T-lbGIPK-1_yFlJBNF5tW_BQamUwlLgvhkUgiLN-UsDxU3G41O5LPMAZqrYz63kKg0psvDsTHr7QRbAUq6rGLvdu7UppIMcLjIgwHtnnty4qJtvXealAcWilyvihcgf2Q7l_-mAfQPjk2ZtUN9jX-1PKycbltcZO753yIWhhdkVyJZFL55oqV5AW1VCFplcp08VbWuvNP9HXO2Bji1SUQhoh5_KDf1qJyMf03JjN3rtk5IfCGWE0wLhLntS3nfg-NUrDrSVbhgjF6Y-g4T3mDIoMFqfpyerdYvoK4TkpZi9l_13ezW4_2oZsfFXKd5aSKR4DVj-FZ4c9QLPU4csWt-NOZ4Fle_y4tqHCS6kQ87rVPVetspbojbF2Ozr5tWbMWk_w4S6c6OZgN4D0KdDsWs5dvHHcHP2EDDfykH1mZgf0%22%2Cnull%2Cnull%2C32%2Cnull%2Cnull%2Cnull%2C0%5D,_fmt:jspb", {
-        // fetch("https://www.google.com/async/flights/search"
-        //     + "?vet=10ahUKEwiVpOWjqMznAhVKfZoKHSluDWIQjUMIZigA..i"
-        //     + "&ei=0hdEXpXzBMr66QSp3LWQBg"
-        //     + "&hl=pl"
-        //     + "&yv=3"
-        //     + '&async=data:'
-        //     + encodeURI(JSON.stringify([[[[[[null, [["/m/081m_", 4]]], [null, [["/m/05l64", 4]]], ["2020-05-15"]], [[null, [["/m/05l64", 4]]], [null, [["/m/081m_", 4]]], ["2020-05-17"]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [], [], [], null, [], []], [null, [], [], [], [], null, [], []]]], null, "PLN", null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
-        //     + ',s:s,tfg-bgr:["!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4",null,null,19,140,null,null,0],_fmt:jspb',
-        //     {
-        //         "credentials": "include",
-        //         "headers": {
-        //             "accept": "*/*",
-        //             "accept-language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-        //             "sec-fetch-dest": "empty",
-        //             "sec-fetch-mode": "cors",
-        //             "sec-fetch-site": "same-origin"
-        //         },
-        //         "referrer": "https://www.google.com/",
-        //         "referrerPolicy": "origin",
-        //         "body": null,
-        //         "method": "GET",
-        //         "mode": "cors"
-        //     }).then(x => x.text()).then(x => {
-        //     const body = JSON.parse(x.substring(4, x.length))['_r'];
-        //     const flights = body[2][2][0];
-        //     const airports = body[3][0];
-        //     const cheapestFlight = flights[0][0][4][0];
-        //     const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0]);
-        //     const cheapestEnd = airports.find(airport => airport[0] === cheapestFlight[1]);
-        //     console.log({
-        //         start: {
-        //             id: cheapestStart[0],
-        //             name: cheapestStart[1],
-        //             coordinates: [cheapestStart[12], cheapestStart[11]]
-        //         }, end: {id: cheapestEnd[0], name: cheapestEnd[1], coordinates: [cheapestEnd[12], cheapestEnd[11]]}
-        //     });
-        // });
-        // fetch("https://www.google.com/async/flights/search?vet=10ahUKEwiVpOWjqMznAhVKfZoKHSluDWIQjUMIZigA..i&ei=0hdEXpXzBMr66QSp3LWQBg&hl=pl&yv=3&async=data:"
-        //     + encodeURI(JSON.stringify([[[[[[null, [["/m/081m_", 4]]], [null, [["/m/05l64", 4]]], ["2020-05-15"]], [[null, [["/m/05l64", 4]]], [null, [["/m/081m_", 4]]], ["2020-05-17"]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [], [], [], null, [], []], [null, [], [], [], [], null, [], []]]], null, "PLN", null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
-        //     + ",s:s,tfg-bgr:%5B%22!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4%22%2Cnull%2Cnull%2C19%2C140%2Cnull%2Cnull%2C0%5D,_fmt:jspb", {
-        //     "credentials": "include",
-        //     "headers": {
-        //         "accept": "*/*",
-        //         "accept-language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-        //         "sec-fetch-dest": "empty",
-        //         "sec-fetch-mode": "cors",
-        //         "sec-fetch-site": "same-origin"
-        //     },
-        //     "referrer": "https://www.google.com/",
-        //     "referrerPolicy": "origin",
-        //     "body": null,
-        //     "method": "GET",
-        //     "mode": "cors"
-        // }).then(x => x.text()).then(x => {
-        //     const body = JSON.parse(x.substring(4, x.length))['_r'];
-        //     const flights = body[2][2][0];
-        //     const airports = body[3][0];
-        //     const cheapestFlight = flights[0][0][4][0];
-        //     const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0]);
-        //     const cheapestEnd = airports.find(airport => airport[0] === cheapestFlight[1]);
-        //     console.log({
-        //         start: {
-        //             id: cheapestStart[0],
-        //             name: cheapestStart[1],
-        //             coordinates: [cheapestStart[12], cheapestStart[11]]
-        //         }, end: {id: cheapestEnd[0], name: cheapestEnd[1], coordinates: [cheapestEnd[12], cheapestEnd[11]]}
-        //     });
-        // });
     }
 
     @Get('/uber-estimates')
@@ -205,5 +136,23 @@ export class UberEstimateController {
             console.log(response);
             return { path: params, price: response.data.prices[0].low_estimate };
         });
+    }
+
+    private getValueFromHtml(htmlResponse: string, expression: RegExp): number {
+        const match = htmlResponse.match(expression);
+        if (!match) {
+            return 0;
+        }
+        return Number(match[1].trim())
+    }
+
+    private correctCityName(city: string): string {
+        const encodedCity = city.replace(/ /g, '-')
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "");
+        if (encodedCity === 'Kyiv') {
+            return 'Kiev';
+        }
+        return encodedCity;
     }
 }
