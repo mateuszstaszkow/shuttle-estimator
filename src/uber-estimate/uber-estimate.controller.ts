@@ -23,12 +23,16 @@ export class UberEstimateController {
                                  @Query('endAirport') endAirport: string,
                                  @Query('startDate') startDate: string,
                                  @Query('endDate') endDate: string,
-                                 @Query('startHour') startHour: number,
-                                 @Query('endHour') endHour: number): Promise<any> {
-        startHour = startHour || 16;
-        endHour = endHour || 12;
+                                 @Query('startHourFrom') startHourFrom: number,
+                                 @Query('startHourTo') startHourTo: number,
+                                 @Query('endHourFrom') endHourFrom: number,
+                                 @Query('endHourTo') endHourTo: number): Promise<any> {
+        startHourFrom = startHourFrom || 16;
+        startHourTo = startHourTo || 23;
+        endHourFrom = endHourFrom || 12;
+        endHourTo = endHourTo || 23;
         return fetch('https://www.google.com/async/flights/search?vet=10ahUKEwiVpOWjqMznAhVKfZoKHSluDWIQjUMIZigA..i&ei=0hdEXpXzBMr66QSp3LWQBg&hl=pl&yv=3&async=data:'
-            + encodeURI(JSON.stringify([[[[[[null, [[startAirport, 4]]], [null, [[endAirport, 4]]], [startDate]], [[null, [[endAirport, 4]]], [null, [[startAirport, 4]]], [endDate]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [[startHour, 23]], [], [], null, [], []], [null, [], [[endHour, 23]], [], [], null, [], []]]], null, 'PLN', null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
+            + encodeURI(JSON.stringify([[[[[[null, [[startAirport, 4]]], [null, [[endAirport, 4]]], [startDate]], [[null, [[endAirport, 4]]], [null, [[startAirport, 4]]], [endDate]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [[startHourFrom, startHourTo]], [], [], null, [], []], [null, [], [[endHourFrom, endHourTo]], [], [], null, [], []]]], null, 'PLN', null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
             + ',s:s,tfg-bgr:%5B%22!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4%22%2Cnull%2Cnull%2C19%2C140%2Cnull%2Cnull%2C0%5D,_fmt:jspb', {
             'credentials': 'include',
             'headers': {
