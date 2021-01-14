@@ -47,7 +47,11 @@ export class UberEstimateController {
             'body': null,
             'method': 'GET',
             'mode': 'cors'
-        }).then(x => x.text()).then(x => JSON.parse(x.substring(4, x.length))['_r']);
+        }).then(x => {
+
+            console.log(x.status)
+            return x.text()
+        }).then(x => JSON.parse(x.substring(4, x.length))['_r']);
     }
 
     @Post('/taxi-fare')
