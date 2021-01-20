@@ -1,15 +1,5 @@
 import {Controller, Get} from '@nestjs/common';
 import {concatMap, delay, map, scan} from "rxjs/operators";
-import {
-    HOLIDAY_BODY,
-    TRIVAGO_ALL_INCUSIVE,
-    TRIVAGO_BODY,
-    TRIVAGO_GRAPHQL_URL,
-    TRIVAGO_LOW_COST,
-    TRIVAGO_OPTIONS,
-    TRIVAGO_QUERY_PARAMS,
-    TRIVAGO_SUGGESTIONS_BODY,
-} from "../app-path.constants";
 import {from, Observable, of} from "rxjs";
 import {TaxiFareResponseDto} from "../uber-estimate/taxi-fare-response.dto";
 import {UberEstimateController} from "../uber-estimate/uber-estimate.controller";
@@ -17,7 +7,6 @@ import {FlightService} from "./flight.service";
 import {Weekend} from "../model/weekend.interface";
 import {Flight} from "../model/flight.interface";
 import {DetailedFlightAirports} from "../model/airport.interface";
-import {Hotel} from "../model/hotel.interface";
 import {WeekendService} from "../weekend/weekend.service";
 import {BANNED_PLACES, FLIGHT_HOURS_DEFAULT, MS_PER_DAY} from "./flight.constants";
 
@@ -35,14 +24,10 @@ export class FlightController {
     private readonly WARSAW_TAXI_RATE_PER_KM = 2.4; // TODO: fetch
     private readonly WARSAW_TAXI_STARTING_COST = 8; // TODO: fetch
     private readonly HOME_COORDINATES = [20.979214, 52.231975];
-    private readonly HOTEL_MAX_DISTANCE_TO_CENTER = 3;
     private readonly DECIMAL_DEGREE_TO_KM = 111.196672;
     private readonly DISTANCE_THRESHOLD = 20;
     private readonly maxMinuteDistanceForCloseFlights = 2.5;
     private FLIGHT_COST_MAX = 2000;
-    private HOTEL_COST_MAX = 1000;
-    private body; // TODO: remove
-    private trivagoQueryParams = TRIVAGO_QUERY_PARAMS; // TODO: remove
     private flights: Flight[] = [];
     private flightDetailsLoading = false;
     private taxiController: UberEstimateController;
@@ -55,7 +40,7 @@ export class FlightController {
     @Get()
     public getDetailedFlightInfo(): Observable<Flight[]> {
         const weekends = this.weekendService
-            .buildRemainingWeekends(5, 0, 16, FLIGHT_HOURS_DEFAULT);
+            .buildRemainingWeekends(5, 0, 4, FLIGHT_HOURS_DEFAULT);
         return this.mapToDelayedObservableArray<Weekend>(weekends).pipe(
             concatMap((weekend: Weekend) => this.flightService
                 .getFlights(weekend, this.FLIGHT_COST_MAX, BANNED_PLACES)),
@@ -159,64 +144,6 @@ export class FlightController {
         );
     }
 
-    private sendRoundFlights() {
-        this.flights.forEach(flight => this.setHotelForRoundFlight(flight));
-    }
-
-    private setHotelForRoundFlight(flight: Flight) {
-        const queryParams = {...this.trivagoQueryParams};
-        const body = {...TRIVAGO_BODY, variables: {...TRIVAGO_BODY.variables}};
-        const options = {...TRIVAGO_OPTIONS};
-        flight.invocations = 0;
-        console.log('    Hotel request: ', flight.arrival.city);
-        this.getTrivagoCityCode(flight.arrival.city)
-            .then(code => {
-                // console.log(flight.arrival.city, code)
-                queryParams.uiv = code;
-                queryParams.sp = this.mapToTrivagoDate(flight.weekend.startDay) + '/' + this.mapToTrivagoDate(flight.weekend.endDay);
-                body.variables.queryParams = JSON.stringify(queryParams) as any;
-                options.body = JSON.stringify(body);
-                this.fetchHotelAndAssignForRoundFlight(flight, options, body, queryParams);
-                // this.getAgodaHotelsAndAssignForRoundFlight(flight, code);
-            });
-    }
-
-    private fetchHotelAndAssignForRoundFlight(flight: Flight, options, body, queryParams) {
-        flight.invocations++;
-        fetch(TRIVAGO_GRAPHQL_URL, options)
-            .then(response => {
-                // console.log(response.headers.get('set-cookie'));
-                return response.json();
-            })
-            .then(response => {
-                // console.log(flight.arrival.city, JSON.stringify(response.data.rs.accommodations.map(a => a.name.value)))
-                const hotel = response.data.rs.accommodations.find(a => this.isNotHostelAndDistantAndExpensive(flight, a));
-                if (hotel) {
-                    this.assignHotelToRoundFlight(flight, hotel);
-                    if (flight.weekend.isLast) {
-                        this.updateFlightsWithAirportCoordinates();
-                    }
-                    return;
-                } else if (response.data.rs.accommodations.length) {
-                    queryParams.accoff += 25;
-                    body.variables.queryParams = JSON.stringify(queryParams) as any;
-                    options.body = JSON.stringify(body);
-                    this.fetchHotelAndAssignForRoundFlight(flight, options, body, queryParams);
-                } else if (flight.invocations > 3) {
-                    const index = this.flights.indexOf(flight);
-                    if (index !== -1) {
-                        this.flights.splice(index, 1);
-                    }
-                    if (flight.weekend.isLast) {
-                        this.updateFlightsWithAirportCoordinates();
-                    }
-                    return;
-                }
-                this.fetchHotelAndAssignForRoundFlight(flight, options, body, queryParams);
-            })
-            .catch(error => this.updateFlightsWithAirportCoordinates());
-    }
-
     private updateFlightsWithAirportCoordinates(): void {
         if (this.currentFlights) {
             return;
@@ -305,39 +232,13 @@ export class FlightController {
     }
 
     private setTaxiCostsAndCalculateTaxiSummary(flight: Flight, fareResponseDto: TaxiFareResponseDto): number {
-        const rms = +this.trivagoQueryParams.rms;
+        const rms = 1;
         const fare = fareResponseDto.faresByCities[flight.arrival.city];
         flight.arrival.startTaxiCost = Math
             .round((flight.arrival.startDistance * this.WARSAW_TAXI_RATE_PER_KM + this.WARSAW_TAXI_STARTING_COST) / rms);
         flight.arrival.endTaxiCost = Math
             .round((flight.arrival.endDistance * fare.costPerKilometer.mean + fare.startingCost.mean) / rms);
         return flight.arrival.startTaxiCost + flight.arrival.endTaxiCost;
-    }
-
-    private isNotHostelAndDistantAndExpensive(flight: Flight, accommodation): boolean {
-        return !accommodation.accommodationType.value.includes('Hostel')
-            && !this.isHotelExpensive(accommodation)
-            && this.calculateStraightDistanceInKilometers(
-                flight.coordinates,
-                [accommodation.geocode.lng, accommodation.geocode.lat]
-            ) < this.HOTEL_MAX_DISTANCE_TO_CENTER;
-    }
-
-    private isHotelExpensive(hotel): boolean {
-        const rms = +this.trivagoQueryParams.rms;
-        return hotel.deals.bestPrice.pricePerStay > (this.HOTEL_COST_MAX * rms);
-    }
-
-    private assignHotelToRoundFlight(flight: Flight, hotel) {
-        const cost = hotel.deals.bestPrice.pricePerStay;
-        const rms = +this.trivagoQueryParams.rms;
-        const hotelData: Hotel = {
-            name: hotel.name.value,
-            cost: Math.round(cost / rms),
-            coordinates: [hotel.geocode.lng, hotel.geocode.lat]
-        };
-        flight.summary = flight.cost + hotelData.cost;
-        flight.hotel = hotelData;
     }
 
     private calculateStraightDistanceInKilometers(first: [number, number] | number[], second: [number, number] | number[]): number {
@@ -375,33 +276,5 @@ export class FlightController {
             return -1;
         }
         return 0;
-    }
-
-    private mapToTrivagoDate(date: string): string {
-        return date
-            .replace(/-/g, '');
-    }
-
-    private getTrivagoCityCode(name: string): Promise<string> {
-        const body = {
-            ...TRIVAGO_SUGGESTIONS_BODY,
-            variables: {
-                input: {
-                    ...TRIVAGO_SUGGESTIONS_BODY.variables.input,
-                    query: name
-                },
-            }
-        };
-        const options = {...TRIVAGO_OPTIONS};
-        options.body = JSON.stringify(body);
-        return fetch(TRIVAGO_GRAPHQL_URL, options)
-            .then(response => response.json())
-            .then(response => {
-                const nsid = response.data.getSearchSuggestions.searchSuggestions[0].nsid;
-                const qualityCodes = (this.body === HOLIDAY_BODY)
-                    ? TRIVAGO_ALL_INCUSIVE
-                    : TRIVAGO_LOW_COST;
-                return nsid.id + '/' + nsid.ns + qualityCodes;
-            });
     }
 }
