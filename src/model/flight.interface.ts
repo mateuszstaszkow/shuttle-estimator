@@ -1,5 +1,5 @@
 import {Weekend} from "./weekend.interface";
-import {Airport} from "./airport.interface";
+import {Airport, DetailedFlightAirports} from "./airport.interface";
 import {Hotel} from "./hotel.interface";
 
 export interface Flight {
@@ -12,4 +12,5 @@ export interface Flight {
     summary?: number;
     hotel?: Hotel;
     invocations?: number; // TODO: remove
+    detailedFlight?: DetailedFlightAirports;
 }

@@ -1,10 +1,14 @@
 import {HttpService, Injectable} from '@nestjs/common';
-import {GOOGLE_FLIGHTS_OPTIONS, GOOGLE_FLIGHTS_URL} from "../app-path.constants";
 import {BannedPlaces} from "../model/banned-places.interface";
-import {getWarsawBody} from "./flight.constants";
+import {
+    getGoogleFlightsDetailsUrl,
+    getWarsawBody, GOOGLE_FLIGHTS_DETAILS_OPTIONS,
+    GOOGLE_FLIGHTS_OPTIONS,
+    GOOGLE_FLIGHTS_URL
+} from "./flight.constants";
 import {Weekend} from "../model/weekend.interface";
 import {Flight} from "../model/flight.interface";
-import {buildAirport} from "../model/airport.interface";
+import {buildAirport, DetailedFlightAirports} from "../model/airport.interface";
 
 // TODO: replace with HttpService
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -25,6 +29,49 @@ export class FlightService {
         // if (this.body === CHOPIN_BODY || this.body === WARSAW_BODY) {
         //   this.getOneWayFlights(weekend);
         // }
+    }
+
+    public updateFlightWithAirportCoordinates(flight: Flight): Promise<Flight> {
+        console.log('        Flight details: ' + flight.arrival.city + ', '
+            + flight.weekend.startDay + ' - ' + flight.weekend.endDay);
+        const startHourFrom = flight.weekend.startHourFrom || 16;
+        const startHourTo = flight.weekend.startHourTo || 23;
+        const endHourFrom = flight.weekend.endHourFrom || 12;
+        const endHourTo = flight.weekend.endHourTo || 23;
+        const url = getGoogleFlightsDetailsUrl(flight, startHourFrom, startHourTo, endHourFrom, endHourTo);
+        return fetch(url, GOOGLE_FLIGHTS_DETAILS_OPTIONS)
+            .then(response => response.text())
+            .then(response => JSON.parse(response.substring(4, response.length))['_r'])
+            .then(body => this.mapToDetailedAirports(body))
+            .catch(err => console.error(err));
+    }
+
+    private mapToDetailedAirports(body: any): DetailedFlightAirports {
+        const flights = body[2][2][0] || body[2][2][1];
+        const airports = body[3][0];
+        if (!flights) {
+            return null;
+        }
+        const cheapestFlight = flights[0][0][4];
+        const lastCheapestFlight = cheapestFlight[cheapestFlight.length - 1];
+        const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0][0]);
+        const cheapestEnd = airports.find(airport => airport[0] === lastCheapestFlight[1]);
+        return this.buildDetailedAirports(cheapestStart, cheapestEnd);
+    }
+
+    private buildDetailedAirports(cheapestStart: any[], cheapestEnd: any[]): DetailedFlightAirports {
+        return {
+            start: {
+                id: cheapestStart[0],
+                name: cheapestStart[1],
+                coordinates: [cheapestStart[12], cheapestStart[11]]
+            },
+            end: {
+                id: cheapestEnd[0],
+                name: cheapestEnd[1],
+                coordinates: [cheapestEnd[12], cheapestEnd[11]]
+            }
+        };
     }
 
     private getRoundFlights(weekend: Weekend, flightMaxCost: number, bannedPlaces: BannedPlaces): Promise<Flight[]> {
@@ -66,10 +113,11 @@ export class FlightService {
     }
 
     private isAirportBanned(flight: Flight, bannedPlaces: BannedPlaces): boolean {
-        return bannedPlaces.countries.includes(flight.arrival.country)
-            || bannedPlaces.cities.includes(flight.arrival.city)
-            || bannedPlaces.countries.includes(flight.depart.country)
-            || bannedPlaces.cities.includes(flight.depart.city);
+        return false; // TODO: add as a query param
+        // return bannedPlaces.countries.includes(flight.arrival.country)
+        //     || bannedPlaces.cities.includes(flight.arrival.city)
+        //     || bannedPlaces.countries.includes(flight.depart.country)
+        //     || bannedPlaces.cities.includes(flight.depart.city);
     }
 
     // TODO: implement one way

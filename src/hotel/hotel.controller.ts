@@ -12,7 +12,7 @@ export class HotelController {
 
     @Post()
     public updateFlightWithHotelDetails(@Body() flight: Flight,
-                                        @Query() numberOfPeople: number = this.NUMBER_OF_PEOPLE,
+                                        @Query() numberOfPeople: number,
                                         @Query() hotelCostMax: number = this.HOTEL_COST_MAX_PLN,
                                         @Query() isHoliday = false): Observable<Flight> {
         numberOfPeople = Number(numberOfPeople) || this.NUMBER_OF_PEOPLE;

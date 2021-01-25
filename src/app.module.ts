@@ -7,10 +7,12 @@ import { FlightService } from './flight/flight.service';
 import { WeekendService } from './weekend/weekend.service';
 import { HotelService } from './hotel/hotel.service';
 import { HotelController } from './hotel/hotel.controller';
+import { ShuttleController } from './shuttle/shuttle.controller';
+import { ShuttleService } from './shuttle/shuttle.service';
 
 @Module({
   imports: [HttpModule],
-  controllers: [AppController, UberEstimateController, FlightController, HotelController],
-  providers: [AppService, FlightService, WeekendService, HotelService],
+  controllers: [AppController, UberEstimateController, FlightController, HotelController, ShuttleController],
+  providers: [AppService, FlightService, WeekendService, HotelService, ShuttleService],
 })
 export class AppModule {}

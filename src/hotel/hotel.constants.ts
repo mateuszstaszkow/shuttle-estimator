@@ -133,30 +133,6 @@ export function getTrivagoSuggestionsOptions(term: string): RequestInit {
     };
 }
 
-// fetch("https://www.agoda.com/graphql/search", {
-//     "headers": {
-//         "accept": "*/*",
-//         "accept-language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
-//         "access-control-max-age": "7200",
-//         "ag-debug-override-origin": "PL",
-//         "ag-language-locale": "pl-pl",
-//         "ag-page-type-id": "103",
-//         "ag-request-attempt": "1",
-//         "ag-request-id": "ac19d47f-4479-40da-9832-d7fec6c1572a",
-//         "ag-retry-attempt": "0",
-//         "content-type": "application/json",
-//         "sec-fetch-dest": "empty",
-//         "sec-fetch-mode": "cors",
-//         "sec-fetch-site": "same-origin"
-//     },
-//     "referrer": "https://www.agoda.com/pl-pl/search?city=15470&locale=pl-pl&ckuid=a3d46da8-532a-41d6-a2a2-d42786317148&prid=0&currency=PLN&correlationId=bbb62874-1e8c-4bcb-aafb-bc714ae76862&pageTypeId=103&realLanguageId=27&languageId=27&origin=PL&cid=1844104&userId=a3d46da8-532a-41d6-a2a2-d42786317148&whitelabelid=1&loginLvl=0&storefrontId=3&currencyId=23&currencyCode=PLN&htmlLanguage=pl-pl&cultureInfoName=pl-pl&machineName=am-crweb-4012&trafficGroupId=1&sessionId=vwjqd0y4rxujhr5luhjmg0gs&trafficSubGroupId=84&aid=130589&useFullPageLogin=true&cttp=4&isRealUser=true&checkIn=2021-01-22&checkOut=2021-01-24&rooms=1&adults=1&children=0&priceCur=PLN&los=2&textToSearch=Pary%C5%BC&travellerType=0&familyMode=off&hotelReviewScore=7&hotelAccom=34,29,37,120,32,28,131,122&productType=-1",
-//     "referrerPolicy": "strict-origin-when-cross-origin",
-//     "body": "",
-//     "method": "POST",
-//     "mode": "cors",
-//     "credentials": "include"
-// });
-
 // startDate format ex: 2021-01-21
 export const getAgodaHotelBody = (cityId: number, startDate: string, numberOfDays: number, numberOfPeople: number) => ({
     "operationName": "citySearch",
@@ -208,7 +184,7 @@ export const getAgodaHotelBody = (cityId: number, startDate: string, numberOfDay
                 "searchContext": {
                     "userId": "a3d46da8-532a-41d6-a2a2-d42786317148",
                     "memberId": 0,
-                    "locale": "pl-pl",
+                    "locale": "en-us",
                     "cid": 1844104,
                     "origin": "PL",
                     "platform": 1,
@@ -310,7 +286,7 @@ export const getAgodaHotelBody = (cityId: number, startDate: string, numberOfDay
                 "rawUserId": "a3d46da8-532a-41d6-a2a2-d42786317148",
                 "memberId": 0,
                 "userOrigin": "PL",
-                "locale": "pl-pl",
+                "locale": "en-us",
                 "forceExperimentsByIdNew": [{"key": "FAM-366", "value": "B"}, {
                     "key": "CP-4081",
                     "value": "B"
@@ -503,4 +479,4 @@ export const TRIVAGO_LOW_COST = ',2555/106,2007/106,1527/106,1324/106';
 
 export const TRIVAGO_GRAPHQL_URL = 'https://www.trivago.pl/graphql';
 export const AGODA_GRAPHQL_URL_SEARCH = 'https://www.agoda.com/graphql/search';
-export const getAgodaSuggestionsUrl = encodedCityName => `https://www.agoda.com/api/cronos/search/GetUnifiedSuggestResult/3/27/27/0/pl-pl?searchText=${encodedCityName}&guid=5860c32c-1afd-48aa-88ae-a125437eaba3&origin=PL&cid=1844104&pageTypeId=103&logtime=Wed%20Jan%2013%202021%2023%3A11%3A35%20GMT%2B0100%20(czas%20%C5%9Brodkowoeuropejski%20standardowy)&logTypeId=1&isHotelLandSearch=true`;
+export const getAgodaSuggestionsUrl = encodedCityName => `https://www.agoda.com/api/cronos/search/GetUnifiedSuggestResult/3/27/27/0/en-us?searchText=${encodedCityName}&guid=5860c32c-1afd-48aa-88ae-a125437eaba3&origin=PL&cid=1844104&pageTypeId=103&logtime=Wed%20Jan%2013%202021%2023%3A11%3A35%20GMT%2B0100%20(czas%20%C5%9Brodkowoeuropejski%20standardowy)&logTypeId=1&isHotelLandSearch=true`;
