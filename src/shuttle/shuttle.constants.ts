@@ -21,4 +21,6 @@ export const TAXI_START_EXP = /<tr><td>Taxi Start \(Normal Tariff\) <\/td> <td s
 export const TAXI_RIDE_EXP = /<td style="text-align: right" class="priceValue tr_highlighted"> <span class="first_currency">(.*)&nbsp;/;
 export const TAXI_WAIT_EXP = /<tr><td>Taxi 1hour Waiting \(Normal Tariff\) <\/td> <td style="text-align: right" class="priceValue "> <span class="first_currency">(.*)&nbsp;/;
 
+export const getNumbeoCorrectCityNameExp = (country: string) => new RegExp('<a href=\\"https:\\/\\/www.numbeo.com\\/taxi-fare\\/in\\/.*>(.*), ' + country);
+
 export const getNumbeoUrl = (encodedCity: string, currency: string): string => `https://www.numbeo.com/taxi-fare/in/${encodedCity}?displayCurrency=${currency}`;

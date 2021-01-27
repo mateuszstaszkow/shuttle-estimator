@@ -2,7 +2,14 @@ import {Injectable} from '@nestjs/common';
 import {Flight} from "../model/flight.interface";
 import {TaxiFareResponseDto} from "../uber-estimate/taxi-fare-response.dto";
 import {TaxiFareForCityDto} from "../uber-estimate/taxi-fare-for-city.dto";
-import {getNumbeoOptions, getNumbeoUrl, TAXI_RIDE_EXP, TAXI_START_EXP, TAXI_WAIT_EXP} from "./shuttle.constants";
+import {
+    getNumbeoCorrectCityNameExp,
+    getNumbeoOptions,
+    getNumbeoUrl,
+    TAXI_RIDE_EXP,
+    TAXI_START_EXP,
+    TAXI_WAIT_EXP
+} from "./shuttle.constants";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const fetch = require('node-fetch');
@@ -30,14 +37,14 @@ export class ShuttleService {
         if (flight.arrival.startDistance > this.DISTANCE_THRESHOLD || flight.arrival.endDistance > this.DISTANCE_THRESHOLD) {
             // TODO calculate
         }
-        return this.getTaxiCostForCity(flight.arrival.city)
+        return this.getTaxiCostForCity(flight.arrival.city, flight.arrival.country)
             .then(response => {
                 flight.summary += this.setTaxiCostsAndCalculateTaxiSummary(flight, response, numberOfPeople)
                 return flight;
             });
     }
 
-    private getTaxiCostForCity(city: string): Promise<TaxiFareForCityDto> {
+    private getTaxiCostForCity(city: string, country: string, isRepeat = false): Promise<TaxiFareForCityDto> {
         const currency = 'PLN';
         const encodedCity = this.correctCityName(city);
         const response = new TaxiFareResponseDto();
@@ -45,33 +52,31 @@ export class ShuttleService {
         return fetch(getNumbeoUrl(encodedCity, currency), getNumbeoOptions(encodedCity))
             .then(response => response.text())
             .then(htmlResponse => {
-                const start = this.getValueFromHtml(htmlResponse, TAXI_START_EXP);
-                const ride = this.getValueFromHtml(htmlResponse, TAXI_RIDE_EXP);
-                const wait = this.getValueFromHtml(htmlResponse, TAXI_WAIT_EXP);
+                const start = Number(this.getValueFromHtml(htmlResponse, TAXI_START_EXP));
+                if (!start && !isRepeat) {
+                    const parts = this.getValueFromHtml(htmlResponse, getNumbeoCorrectCityNameExp(country))
+                        .split('>');
+                    const correctCityName = parts.length === 1 ? parts[0] : parts[parts.length - 1];
+                    return this.getTaxiCostForCity(correctCityName, country, true);
+                }
+                const ride = Number(this.getValueFromHtml(htmlResponse, TAXI_RIDE_EXP));
+                const wait = Number(this.getValueFromHtml(htmlResponse, TAXI_WAIT_EXP));
                 return new TaxiFareForCityDto(start, ride, wait);
             }).catch(err => console.error('Error fetching shuttle data for: ' + city, err));
     }
 
-    private getValueFromHtml(htmlResponse: string, expression: RegExp): number {
+    private getValueFromHtml(htmlResponse: string, expression: RegExp): string {
         const match = htmlResponse.match(expression);
         if (!match) {
-            return 0;
+            return '0';
         }
-        return Number(match[1].trim())
+        return match[1].trim()
     }
 
     private correctCityName(city: string): string {
-        const encodedCity = city.replace(/ /g, '-')
+        return city.replace(/ /g, '-')
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "");
-        switch (encodedCity) {
-            case 'Kyiv':
-                return 'Kiev';
-            case 'Krakow':
-                return 'Krakow-Cracow';
-            default:
-                return encodedCity;
-        }
     }
 
     private setTaxiCostsAndCalculateTaxiSummary(flight: Flight, fare: TaxiFareForCityDto, numberOfPeople: number): number {
