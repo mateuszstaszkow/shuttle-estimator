@@ -28,23 +28,38 @@ export class HotelService {
                                         numberOfPeople: number,
                                         hotelCostMax: number,
                                         isHoliday = false): Observable<Flight> {
-        console.log('    Hotel request: ', flight.arrival.city);
         return from(
             this.getAgodaCityCode(flight.arrival.city)
                 .then(cityId => this.getAgodaHotelsAndAssignForRoundFlight(flight, cityId, numberOfPeople, hotelCostMax))
         );
     }
 
-    private getAgodaHotelsAndAssignForRoundFlight(flight: Flight, cityId: number, numberOfPeople: number, hotelCostMax: number): Promise<Flight> {
+    private getAgodaHotelsAndAssignForRoundFlight(flight: Flight,
+                                                  cityId: number,
+                                                  numberOfPeople: number,
+                                                  hotelCostMax: number,
+                                                  calls = 0): Promise<Flight> {
+        calls++;
+        console.log(`    Hotel request (calls: ${calls}): `, flight.arrival.city);
         const options = getAgodaHotelOptions(
             cityId,
             flight.weekend.startDay,
             flight.weekend.numberOfDays,
-            numberOfPeople
+            numberOfPeople,
+            !!(calls % 2)
         );
         return fetch(AGODA_GRAPHQL_URL_SEARCH, options)
             .then(response => response.json())
             .then(response => {
+                if (!this.getAgodaHotelPrice(response.data?.citySearch.properties[0]) && (calls <= 5)) {
+                    return this.getAgodaHotelsAndAssignForRoundFlight(
+                        flight,
+                        cityId,
+                        numberOfPeople,
+                        hotelCostMax,
+                        calls
+                    );
+                }
                 const hotel = response.data?.citySearch.properties
                     .find(p => this.isNotHostelAndDistantAndExpensiveAgoda(flight, p, numberOfPeople, hotelCostMax));
                 if (!hotel) {

@@ -20,7 +20,7 @@ export class FlightController {
     @Get('flights')
     public getDetailedFlightInfo(): Observable<Flight[]> {
         const weekends = this.weekendService
-            .buildRemainingWeekends(5, 0, 2, FLIGHT_HOURS_DEFAULT);
+            .buildRemainingWeekends(5, 0, 16, FLIGHT_HOURS_DEFAULT);
         return this.mapToDelayedObservableArray<Weekend>(weekends).pipe(
             concatMap((weekend: Weekend) => this.flightService
                 .getFlights(weekend, this.FLIGHT_COST_MAX, BANNED_PLACES)),
