@@ -39,6 +39,9 @@ export class HotelService {
                                                   numberOfPeople: number,
                                                   hotelCostMax: number,
                                                   calls = 0): Promise<Flight> {
+        if (!cityId) {
+            return Promise.resolve(flight);
+        }
         calls++;
         console.log(`    Hotel request (calls: ${calls}): `, flight.arrival.city);
         const options = getAgodaHotelOptions(
@@ -66,6 +69,9 @@ export class HotelService {
                     return flight;
                 }
                 return this.updateFlightWithHotelData(flight, hotel, numberOfPeople);
+            }).catch(err => {
+                console.error('Error fetching hotel data for the city: ', flight.arrival.city, ' - ', err);
+                return flight;
             })
     }
 
@@ -134,7 +140,11 @@ export class HotelService {
         const url = getAgodaSuggestionsUrl(encodedCityName)
         return fetch(url, getAgodaSuggestionsOptions())
             .then(response => response.json())
-            .then(response => response.SuggestionList[0]?.ObjectID);
+            .then(response => response.SuggestionList[0]?.ObjectID)
+            .catch(err => {
+                console.log('Could not fetch Agoda city code for the ', name, ' - ', err);
+                return '';
+            })
     }
 
     private calculateStraightDistanceInKm(first: [number, number] | number[],

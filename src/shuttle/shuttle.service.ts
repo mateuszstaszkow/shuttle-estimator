@@ -62,7 +62,10 @@ export class ShuttleService {
                 const ride = Number(this.getValueFromHtml(htmlResponse, TAXI_RIDE_EXP));
                 const wait = Number(this.getValueFromHtml(htmlResponse, TAXI_WAIT_EXP));
                 return new TaxiFareForCityDto(start, ride, wait);
-            }).catch(err => console.error('Error fetching shuttle data for: ' + city, err));
+            }).catch(err => {
+                console.error('Error fetching shuttle data for: ' + city, err);
+                return null;
+            });
     }
 
     private getValueFromHtml(htmlResponse: string, expression: RegExp): string {
@@ -80,6 +83,10 @@ export class ShuttleService {
     }
 
     private setTaxiCostsAndCalculateTaxiSummary(flight: Flight, fare: TaxiFareForCityDto, numberOfPeople: number): number {
+        // TODO: parametrize
+        if (!fare) {
+            return 0;
+        }
         flight.arrival.startTaxiCost = Math
             .round((flight.arrival.startDistance * this.WARSAW_TAXI_RATE_PER_KM + this.WARSAW_TAXI_STARTING_COST) / numberOfPeople);
         flight.arrival.endTaxiCost = Math

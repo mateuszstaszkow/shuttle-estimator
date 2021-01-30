@@ -83,7 +83,10 @@ export class FlightService {
                 const response = this.buildResponseObjectFrom(responseText);
                 return this.buildFlights(weekend, response, flightMaxCost, body[3][13][0][0][0][0][0])
                     .filter((flight: Flight) => !this.isAirportBanned(flight, bannedPlaces));
-            });
+            }).catch(err => {
+                console.error('Could not fetch any flights from the Google. ', err);
+                return [];
+            })
     }
 
     private buildFlightsBody(weekend: Weekend): any {
