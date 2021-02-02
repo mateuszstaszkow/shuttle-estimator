@@ -132,7 +132,7 @@ export class FlightService {
     // TODO: implement one way
     private buildFlights(weekend: Weekend, response: any, flightMaxCost: number, homeId: string): Flight[] {
         return response[1][4][0]
-            .filter(flightResponse => Number(flightResponse[1][0][1]) < flightMaxCost)
+            .filter(flightResponse => (Number(flightResponse[1][0][1]) < flightMaxCost) && !flightResponse[6][10])
             .map((flightResponse): Flight => {
                 const destination = response[0][3][0].find(d => d[0] === flightResponse[0]);
                 const airline = flightResponse[6][1];

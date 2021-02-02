@@ -41,14 +41,17 @@ export function getWarsawBody(startDay: string, endDay: string, arrivalHours: nu
             null,
             null,
             [],
+            1,
             1
         ],
         null,
         1,
-        true,
+        null,
         false,
         true,
-        false
+        false,
+        [1407, 857],
+        4
     ];
 }
 
@@ -71,7 +74,7 @@ export function getGoogleFlightsDetailsBody(flight: Flight, arrivalHours: number
             null,
             [
                 [[[[flight.arrival.startId, 5]]], [[[flight.arrival.endId, 5]]], arrivalHours, 1, [], [], flight.weekend.startDay, null, [], [], [], null, null],
-                [[[[flight.arrival.endId, 5]]], [[[flight.arrival.startId, 5]]], departHours, 1, [], [], flight.weekend.endDay  , null, [], [], [], null, null]],
+                [[[[flight.arrival.endId, 5]]], [[[flight.arrival.startId, 5]]], departHours, 1, [], [], flight.weekend.endDay, null, [], [], [], null, null]],
             null,
             null,
             null,
@@ -121,7 +124,7 @@ export const BANNED_PLACES: BannedPlaces = {
 }
 
 export const FLIGHT_HOURS_DEFAULT: Partial<Weekend> = {
-    startHourFrom: 17,
+    startHourFrom: 15,
     startHourTo: 23,
     endHourFrom: 10,
     endHourTo: 23,
