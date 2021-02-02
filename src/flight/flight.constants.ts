@@ -28,36 +28,8 @@ export function getWarsawBody(startDay: string, endDay: string, arrivalHours: nu
             null,
             null,
             [
-                [
-                    [[["/m/081m_", 4]]],
-                    [[]],
-                    arrivalHours,
-                    1,
-                    [],
-                    [],
-                    startDay,
-                    [360],
-                    [],
-                    [],
-                    [],
-                    null,
-                    null
-                ],
-                [
-                    [[]],
-                    [[["/m/081m_", 4]]],
-                    departHours,
-                    1,
-                    [],
-                    [],
-                    endDay,
-                    [360],
-                    [],
-                    [],
-                    [],
-                    null,
-                    null
-                ]
+                [[[["/m/081m_", 4]]], [[]], arrivalHours, 1, [], [], startDay, [360], [], [], [], null, null],
+                [[[]], [[["/m/081m_", 4]]], departHours, 1, [], [], endDay, [360], [], [], [], null, null]
             ],
             null,
             null,
@@ -76,6 +48,45 @@ export function getWarsawBody(startDay: string, endDay: string, arrivalHours: nu
         true,
         false,
         true,
+        false
+    ];
+}
+
+export function getGoogleFlightsDetailsBody(flight: Flight, arrivalHours: number[], departHours: number[]): any {
+    return [
+        [null, null],
+        [
+            null,
+            null,
+            1,
+            null,
+            [],
+            1,
+            [1, 0, 0, 0],
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [
+                [[[[flight.arrival.startId, 5]]], [[[flight.arrival.endId, 5]]], arrivalHours, 1, [], [], flight.weekend.startDay, null, [], [], [], null, null],
+                [[[[flight.arrival.endId, 5]]], [[[flight.arrival.startId, 5]]], departHours, 1, [], [], flight.weekend.endDay  , null, [], [], [], null, null]],
+            null,
+            null,
+            null,
+            true,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [],
+            1,
+            1
+        ],
+        1,
+        false,
         false
     ];
 }
@@ -137,32 +148,7 @@ export const GOOGLE_FLIGHTS_OPTIONS: RequestInit = {
     "credentials": "include"
 };
 
-export const GOOGLE_FLIGHTS_DETAILS_OPTIONS: RequestInit = {
-    'credentials': 'include',
-    'headers': {
-        'accept': '*/*',
-        'accept-language': 'pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin'
-    },
-    'referrer': 'https://www.google.com/',
-    'referrerPolicy': 'origin',
-    'body': null,
-    'method': 'GET',
-    'mode': 'cors'
-};
-
-export const getGoogleFlightsDetailsUrl = (flight: Flight,
-                                           startHourFrom: number,
-                                           startHourTo: number,
-                                           endHourFrom: number,
-                                           endHourTo: number): string => {
-    return 'https://www.google.com/async/flights/search?vet=10ahUKEwiVpOWjqMznAhVKfZoKHSluDWIQjUMIZigA..i&ei=0hdEXpXzBMr66QSp3LWQBg&hl=en-US&yv=3&async=data:'
-        + encodeURI(JSON.stringify([[[[[[null, [[flight.arrival.startId, 4]]], [null, [[flight.arrival.endId, 4]]], [flight.weekend.startDay]], [[null, [[flight.arrival.endId, 4]]], [null, [[flight.arrival.startId, 4]]], [flight.weekend.endDay]]], null, [], null, null, null, null, 1, null, 2, null, null, null, null, null, true], [[[null, [], [[startHourFrom, startHourTo]], [], [], null, [], []], [null, [], [[endHourFrom, endHourTo]], [], [], null, [], []]]], null, 'PLN', null, []], [0]])).replace(/,/g, '%2C').replace(/%5C/g, '%22')
-        + ',s:s,tfg-bgr:%5B%22!_P-l_95CfJUuTPkGl0RYmy5IRqqQmHUCAAAAg1IAAAARmQG-54Shq2iVgQNBOEbpRA0sPhvX7PuOvzY1_C2GxMZX8htN96oME911MaRpfmPJuFlINC0mKmVLh8IVF_ZJRDG5ixU7lHqlaNvzYBLwr1CclxUXc9AqaMrUTS7zOEd3tHEsxEfS_TtPAwVnK-jvnyHziKVyr4Nq1XYNTpQ00YaQ593CHPoWH3K3Mw6hhNwwW0qnS4sLBHdNYDK6DoQRfeLdxXLvTkVN2fzfGNIErPPwp-puYdjCsZj77GPJL3PKF7SOmHzfi3Oty2WWhjLfdiCDTApUgK9PWAnVyAvPS9COjKZIw29bpDoluTh5uST5euyxb50VNqbeGAu_P6PaLWI2AyX5IRiUbVgmnkCRS5fdwJ--yU5u43MqelmLDIVPH1VmX6B_V5nOv5dAfXsLen5VymOoZHZTdNV6HC9yTMyj9dUyqcV1hPt0UOi43cWnT-hRd9fh1cnWKuMswAte_d2b6hQ2q36eSeYOa3yQMbKZcqzI6y5VbCHtS6uIqJDPJ1ExaymHBLzKEH42SrZwlt6XFp62J1dZI6jJh4_eHINH-WyTRSai1elvgnh5I7g6bJpWRDzeN9pqTmTXXvdu7P4%22%2Cnull%2Cnull%2C19%2C140%2Cnull%2Cnull%2C0%5D,_fmt:jspb';
-}
-
 export const MS_PER_DAY = 1000 * 3600 * 24;
 
 export const GOOGLE_FLIGHTS_URL = 'https://www.google.com/_/TravelFrontendUi/data/travel.frontend.flights.FlightsFrontendService/GetExploreDestinations?f.sid=-3557253472044563618&bl=boq_travel-frontend-ui_20210106.02_p0&hl=en-US&gl=PL&soc-app=162&soc-platform=1&soc-device=1&_reqid=2181305&rt=c';
+export const GOOGLE_FLIGHTS_DETAILED_URL = 'https://www.google.com/_/TravelFrontendUi/data/travel.frontend.flights.FlightsFrontendService/GetShoppingResults?f.sid=-3542705585279948736&bl=boq_travel-frontend-ui_20210128.01_p0&hl=en-US&gl=PL&soc-app=162&soc-platform=1&soc-device=1&_reqid=5426915&rt=c';

@@ -1,8 +1,9 @@
 import {HttpService, Injectable} from '@nestjs/common';
 import {BannedPlaces} from "../model/banned-places.interface";
 import {
-    getGoogleFlightsDetailsUrl,
-    getWarsawBody, GOOGLE_FLIGHTS_DETAILS_OPTIONS,
+    getGoogleFlightsDetailsBody,
+    getWarsawBody,
+    GOOGLE_FLIGHTS_DETAILED_URL,
     GOOGLE_FLIGHTS_OPTIONS,
     GOOGLE_FLIGHTS_URL
 } from "./flight.constants";
@@ -34,42 +35,39 @@ export class FlightService {
     public updateFlightWithAirportCoordinates(flight: Flight): Promise<Flight> {
         console.log('        Flight details: ' + flight.arrival.city + ', '
             + flight.weekend.startDay + ' - ' + flight.weekend.endDay);
-        const startHourFrom = flight.weekend.startHourFrom || 16;
-        const startHourTo = flight.weekend.startHourTo || 23;
-        const endHourFrom = flight.weekend.endHourFrom || 12;
-        const endHourTo = flight.weekend.endHourTo || 23;
-        const url = getGoogleFlightsDetailsUrl(flight, startHourFrom, startHourTo, endHourFrom, endHourTo);
-        return fetch(url, GOOGLE_FLIGHTS_DETAILS_OPTIONS)
+        const body = this.buildFlightDetailsBody(flight);
+        const encodedBody = this.buildFlightsBodyEncoded(body);
+        return fetch(GOOGLE_FLIGHTS_DETAILED_URL, { ...GOOGLE_FLIGHTS_OPTIONS, body: encodedBody })
             .then(response => response.text())
-            .then(response => JSON.parse(response.substring(4, response.length))['_r'])
-            .then(body => this.mapToDetailedAirports(body))
+            .then(response => this.buildResponseObjectFrom(response, [1]))
+            .then(body => this.mapToDetailedAirports(body[0]))
             .catch(err => console.error(err));
     }
 
     private mapToDetailedAirports(body: any): DetailedFlightAirports {
-        const flights = body[2][2][0] || body[2][2][1];
-        const airports = body[3][0];
+        const flights = body[3][0];
+        const airports = body[17];
         if (!flights) {
             return null;
         }
-        const cheapestFlight = flights[0][0][4];
-        const lastCheapestFlight = cheapestFlight[cheapestFlight.length - 1];
-        const cheapestStart = airports.find(airport => airport[0] === cheapestFlight[0][0]);
-        const cheapestEnd = airports.find(airport => airport[0] === lastCheapestFlight[1]);
-        return this.buildDetailedAirports(cheapestStart, cheapestEnd);
+        const cheapestFlightStartId = flights[0][0][3];
+        const cheapestFlightEndId = flights[0][0][6];
+        const startAirport = airports.find(airport => airport[0][0] === cheapestFlightStartId);
+        const endAirport = airports.find(airport => airport[0][0] === cheapestFlightEndId);
+        return this.buildDetailedAirports(startAirport, endAirport);
     }
 
-    private buildDetailedAirports(cheapestStart: any[], cheapestEnd: any[]): DetailedFlightAirports {
+    private buildDetailedAirports(startAirport: any[], endAirport: any[]): DetailedFlightAirports {
         return {
             start: {
-                id: cheapestStart[0],
-                name: cheapestStart[1],
-                coordinates: [cheapestStart[12], cheapestStart[11]]
+                id: startAirport[2][0],
+                name: startAirport[1],
+                coordinates: startAirport[3].reverse()
             },
             end: {
-                id: cheapestEnd[0],
-                name: cheapestEnd[1],
-                coordinates: [cheapestEnd[12], cheapestEnd[11]]
+                id: endAirport[2][0],
+                name: endAirport[1],
+                coordinates: endAirport[3].reverse()
             }
         };
     }
@@ -80,13 +78,21 @@ export class FlightService {
         return fetch(GOOGLE_FLIGHTS_URL, { ...GOOGLE_FLIGHTS_OPTIONS, body: encodedBody })
             .then(response => response.text())
             .then(responseText => {
-                const response = this.buildResponseObjectFrom(responseText);
+                const response = this.buildResponseObjectFrom(responseText, [1, 2]);
                 return this.buildFlights(weekend, response, flightMaxCost, body[3][13][0][0][0][0][0])
                     .filter((flight: Flight) => !this.isAirportBanned(flight, bannedPlaces));
             }).catch(err => {
                 console.error('Could not fetch any flights from the Google. ', err);
                 return [];
             })
+    }
+
+    private buildFlightDetailsBody(flight: Flight): any {
+        return getGoogleFlightsDetailsBody(
+            flight,
+            [flight.weekend.startHourFrom, flight.weekend.startHourTo, 0, 23],
+            [flight.weekend.endHourFrom, flight.weekend.endHourTo, 0, 23]
+        );
     }
 
     private buildFlightsBody(weekend: Weekend): any {
@@ -107,12 +113,12 @@ export class FlightService {
             .replace(/\//gm, '%2F');
     }
 
-    private buildResponseObjectFrom(responseText: string): any {
+    private buildResponseObjectFrom(responseText: string, indexes: number[]): any {
         const parts = responseText.replace(/(\r\n|\n|\r|\\n)/gm, '')
             .replace(/\\\\/gm, '\\')
             .replace(/\\"/gm, '"')
             .split('[["wrb.fr",null,"');
-        return [1, 2].map(i => JSON.parse(parts[i].substring(0, parts[i].search(/][0-9]/) - 2)));
+        return indexes.map(i => JSON.parse(parts[i].substring(0, parts[i].search(/][0-9]/) - 2)));
     }
 
     private isAirportBanned(flight: Flight, bannedPlaces: BannedPlaces): boolean {
