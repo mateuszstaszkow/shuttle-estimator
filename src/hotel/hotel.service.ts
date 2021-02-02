@@ -47,6 +47,7 @@ export class HotelService {
         const options = getAgodaHotelOptions(
             cityId,
             flight.weekend.startDay,
+            flight.weekend.endDay,
             flight.weekend.numberOfDays,
             numberOfPeople,
             !!(calls % 2)
