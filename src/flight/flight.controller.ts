@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Post} from '@nestjs/common';
+import {Body, Controller, Get, Post, Query} from '@nestjs/common';
 import {concatMap, delay, map, scan} from "rxjs/operators";
 import {from, Observable, of} from "rxjs";
 import {FlightService} from "./flight.service";
@@ -18,9 +18,10 @@ export class FlightController {
     }
 
     @Get('flights')
-    public getFlights(): Observable<Flight[]> {
+    public getFlights(@Query('numberOfWeekends') numberOfWeekends: number): Observable<Flight[]> {
+        numberOfWeekends = numberOfWeekends || 1;
         const weekends = this.weekendService
-            .buildRemainingWeekends(5, 0, 1, FLIGHT_HOURS_DEFAULT);
+            .buildRemainingWeekends(5, 0, numberOfWeekends, FLIGHT_HOURS_DEFAULT);
         return this.mapToDelayedObservableArray<Weekend>(weekends).pipe(
             concatMap((weekend: Weekend) => this.flightService
                 .getFlights(weekend, this.FLIGHT_COST_MAX, BANNED_PLACES)),

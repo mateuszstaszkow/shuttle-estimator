@@ -83,7 +83,6 @@ export class ShuttleService {
     }
 
     private setTaxiCostsAndCalculateTaxiSummary(flight: Flight, fare: TaxiFareForCityDto, numberOfPeople: number): number {
-        // TODO: parametrize
         if (!fare) {
             return 0;
         }
