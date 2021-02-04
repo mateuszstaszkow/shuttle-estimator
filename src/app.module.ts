@@ -1,7 +1,6 @@
 import {HttpModule, Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UberEstimateController } from './uber-estimate/uber-estimate.controller';
 import { FlightController } from './flight/flight.controller';
 import { FlightService } from './flight/flight.service';
 import { WeekendService } from './weekend/weekend.service';
@@ -12,7 +11,7 @@ import { ShuttleService } from './shuttle/shuttle.service';
 
 @Module({
   imports: [HttpModule],
-  controllers: [AppController, UberEstimateController, FlightController, HotelController, ShuttleController],
+  controllers: [AppController, FlightController, HotelController, ShuttleController],
   providers: [AppService, FlightService, WeekendService, HotelService, ShuttleService],
 })
 export class AppModule {}

@@ -1,7 +1,7 @@
 import {Injectable} from '@nestjs/common';
 import {Flight} from "../model/flight.interface";
-import {TaxiFareResponseDto} from "../uber-estimate/taxi-fare-response.dto";
-import {TaxiFareForCityDto} from "../uber-estimate/taxi-fare-for-city.dto";
+import {TaxiFareResponseDto} from "../model/taxi-fare-response.dto";
+import {TaxiFareForCityDto} from "../model/taxi-fare-for-city.dto";
 import {
     getNumbeoCorrectCityNameExp,
     getNumbeoOptions,
@@ -87,6 +87,7 @@ export class ShuttleService {
         if (!fare) {
             return 0;
         }
+        console.log(flight.arrival.city, flight.arrival.endDistance * fare.costPerKilometer.mean + fare.startingCost.mean, numberOfPeople)
         flight.arrival.startTaxiCost = Math
             .round((flight.arrival.startDistance * this.WARSAW_TAXI_RATE_PER_KM + this.WARSAW_TAXI_STARTING_COST) / numberOfPeople);
         flight.arrival.endTaxiCost = Math
