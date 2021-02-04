@@ -11,7 +11,6 @@ export class ShuttleController {
     @Post()
     public updateFlightWithShuttle(@Body() flight: Flight,
                                    @Query('numberOfPeople') numberOfPeople: number): Promise<Flight> {
-        console.log(flight.arrival.city, numberOfPeople)
         numberOfPeople = Number(numberOfPeople) || this.NUMBER_OF_PEOPLE;
         return this.shuttleService.updateFlightWithShuttle(flight, numberOfPeople);
     }

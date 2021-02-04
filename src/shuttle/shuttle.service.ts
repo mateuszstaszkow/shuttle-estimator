@@ -87,7 +87,6 @@ export class ShuttleService {
         if (!fare) {
             return 0;
         }
-        console.log(flight.arrival.city, flight.arrival.endDistance * fare.costPerKilometer.mean + fare.startingCost.mean, numberOfPeople)
         flight.arrival.startTaxiCost = Math
             .round((flight.arrival.startDistance * this.WARSAW_TAXI_RATE_PER_KM + this.WARSAW_TAXI_STARTING_COST) / numberOfPeople);
         flight.arrival.endTaxiCost = Math
