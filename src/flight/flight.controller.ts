@@ -18,10 +18,17 @@ export class FlightController {
     }
 
     @Get('flights')
-    public getFlights(@Query('numberOfWeekends') numberOfWeekends: number): Observable<Flight[]> {
+    public getFlights(@Query('numberOfWeekends') numberOfWeekends: number,
+                      @Query('departFrom') departFrom: number,
+                      @Query('returnFrom') returnFrom: number,): Observable<Flight[]> {
         numberOfWeekends = numberOfWeekends || 1;
+        const hours = {
+            ...FLIGHT_HOURS_DEFAULT,
+            startHourFrom: departFrom || FLIGHT_HOURS_DEFAULT.startHourFrom,
+            endHourFrom: returnFrom || FLIGHT_HOURS_DEFAULT.endHourFrom
+        };
         const weekends = this.weekendService
-            .buildRemainingWeekends(5, 0, numberOfWeekends, FLIGHT_HOURS_DEFAULT);
+            .buildRemainingWeekends(5, 0, numberOfWeekends, hours);
         return this.mapToDelayedObservableArray<Weekend>(weekends).pipe(
             concatMap((weekend: Weekend) => this.flightService
                 .getFlights(weekend, this.FLIGHT_COST_MAX, BANNED_PLACES)),
