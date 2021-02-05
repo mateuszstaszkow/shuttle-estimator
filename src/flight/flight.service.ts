@@ -1,15 +1,19 @@
-import {HttpService, Injectable} from '@nestjs/common';
+import {Injectable} from '@nestjs/common';
 import {BannedPlaces} from "../model/banned-places.interface";
 import {
     getGoogleFlightsDetailsBody,
-    getWarsawBody,
+    getFlightsBody,
     GOOGLE_FLIGHTS_DETAILED_URL,
     GOOGLE_FLIGHTS_OPTIONS,
-    GOOGLE_FLIGHTS_URL
+    GOOGLE_FLIGHTS_URL, GOOGLE_FLIGHTS_CITY_CODES_URL, getGoogleFlightsCityCodesOptions
 } from "./flight.constants";
 import {Weekend} from "../model/weekend.interface";
 import {Flight} from "../model/flight.interface";
 import {buildAirport, DetailedFlightAirports} from "../model/airport.interface";
+import {CityCodeDto} from "../model/city-code-dto.interface";
+import {GeocodeService} from "../geocode/geocode.service";
+import {forkJoin, from, Observable} from "rxjs";
+import {concatMap, map} from "rxjs/operators";
 
 // TODO: replace with HttpService
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -20,12 +24,15 @@ export class FlightService {
     private readonly WIZZ_DISCOUNT_PLN = 43;
     private readonly WIZZ_MIN_PRICE_PLN = 78;
 
-    constructor(private readonly httpService: HttpService) {
+    constructor(private readonly geocodeService: GeocodeService) {
     }
 
-    public getFlights(weekend: Weekend, flightMaxCost: number, bannedPlaces: BannedPlaces): Promise<Flight[]> {
+    public getFlights(weekend: Weekend,
+                      flightMaxCost: number,
+                      bannedPlaces: BannedPlaces,
+                      cityCode: string): Promise<Flight[]> {
         console.log('Flight request: ', weekend.startDay, ', ', weekend.endDay);
-        return this.getRoundFlights(weekend, flightMaxCost, bannedPlaces);
+        return this.getRoundFlights(weekend, flightMaxCost, bannedPlaces, cityCode);
         // TODO implement
         // if (this.body === CHOPIN_BODY || this.body === WARSAW_BODY) {
         //   this.getOneWayFlights(weekend);
@@ -42,6 +49,30 @@ export class FlightService {
             .then(response => this.buildResponseObjectFrom(response, [1]))
             .then(body => this.mapToDetailedAirports(body[0]))
             .catch(err => console.error(err));
+    }
+
+    public getCityCodes(city: string): Observable<CityCodeDto[]> {
+        const cityCodes$: Promise<CityCodeDto[]> = fetch(GOOGLE_FLIGHTS_CITY_CODES_URL, getGoogleFlightsCityCodesOptions(city))
+            .then(response => response.text())
+            .then(responseText => this.buildCityCodes(responseText));
+        return from(cityCodes$).pipe(
+            map(cityCodes => cityCodes.map(c => this.geocodeService.getCoordinatesFor(c.city, c.country)
+                .pipe(map(geocode => ({ ...c, ...geocode }))))),
+            concatMap((cityCodes$: Observable<CityCodeDto>[]) => forkJoin(cityCodes$))
+        );
+    }
+
+    private buildCityCodes(responseText: string): CityCodeDto[] {
+        const parts = this.mapToValidObjectParts(responseText, '"H028ib"');
+        const validObject = JSON.parse(parts[1].split(']"')[0] + ']');
+        return validObject[0].map(result => {
+            const location = result[0][1].split(', ');
+            return {
+                code: result[1] ? result[1][0][0][4] : result[0][result[0].length - 1],
+                city: location[0],
+                country: location[1]
+            };
+        });
     }
 
     private mapToDetailedAirports(body: any): DetailedFlightAirports {
@@ -72,14 +103,17 @@ export class FlightService {
         };
     }
 
-    private getRoundFlights(weekend: Weekend, flightMaxCost: number, bannedPlaces: BannedPlaces): Promise<Flight[]> {
-        const body = this.buildFlightsBody(weekend);
+    private getRoundFlights(weekend: Weekend,
+                            flightMaxCost: number,
+                            bannedPlaces: BannedPlaces,
+                            cityCode: string): Promise<Flight[]> {
+        const body = this.buildFlightsBody(weekend, cityCode);
         const encodedBody = this.buildFlightsBodyEncoded(body);
         return fetch(GOOGLE_FLIGHTS_URL, { ...GOOGLE_FLIGHTS_OPTIONS, body: encodedBody })
             .then(response => response.text())
             .then(responseText => {
                 const response = this.buildResponseObjectFrom(responseText, [1, 2]);
-                return this.buildFlights(weekend, response, flightMaxCost, body[3][13][0][0][0][0][0])
+                return this.buildFlights(weekend, response, flightMaxCost, cityCode)
                     .filter((flight: Flight) => !this.isAirportBanned(flight, bannedPlaces));
             }).catch(err => {
                 console.error('Could not fetch any flights from the Google. ', err);
@@ -95,12 +129,13 @@ export class FlightService {
         );
     }
 
-    private buildFlightsBody(weekend: Weekend): any {
-        return getWarsawBody(
+    private buildFlightsBody(weekend: Weekend, cityCode: string): any {
+        return getFlightsBody(
             weekend.startDay,
             weekend.endDay,
             [weekend.startHourFrom, weekend.startHourTo, 0, 23],
-            [weekend.endHourFrom, weekend.endHourTo, 0, 23]
+            [weekend.endHourFrom, weekend.endHourTo, 0, 23],
+            cityCode
         );
     }
 
@@ -113,11 +148,15 @@ export class FlightService {
             .replace(/\//gm, '%2F');
     }
 
-    private buildResponseObjectFrom(responseText: string, indexes: number[]): any {
-        const parts = responseText.replace(/(\r\n|\n|\r|\\n)/gm, '')
+    private mapToValidObjectParts(responseText: string, key: string): string[] {
+        return responseText.replace(/(\r\n|\n|\r|\\n)/gm, '')
             .replace(/\\\\/gm, '\\')
             .replace(/\\"/gm, '"')
-            .split('[["wrb.fr",null,"');
+            .split('[["wrb.fr",' + key + ',"');
+    }
+
+    private buildResponseObjectFrom(responseText: string, indexes: number[]): any {
+        const parts = this.mapToValidObjectParts(responseText, 'null');
         return indexes.map(i => JSON.parse(parts[i].substring(0, parts[i].search(/][0-9]/) - 2)));
     }
 

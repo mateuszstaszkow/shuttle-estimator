@@ -1,6 +1,7 @@
 import {Weekend} from "./weekend.interface";
 import {Airport, DetailedFlightAirports} from "./airport.interface";
 import {Hotel} from "./hotel.interface";
+import {CityCodeDto} from "./city-code-dto.interface";
 
 export interface Flight {
     cost: number;
@@ -13,4 +14,5 @@ export interface Flight {
     hotel?: Hotel;
     invocations?: number; // TODO: remove
     detailedFlight?: DetailedFlightAirports;
+    start?: CityCodeDto;
 }

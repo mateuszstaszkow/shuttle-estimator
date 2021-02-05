@@ -8,7 +8,11 @@ import {BannedPlaces} from "../model/banned-places.interface";
 import {Weekend} from "../model/weekend.interface";
 import {Flight} from "../model/flight.interface";
 
-export function getWarsawBody(startDay: string, endDay: string, arrivalHours: number[], departHours: number[]): any {
+export function getFlightsBody(startDay: string,
+                               endDay: string,
+                               arrivalHours: number[],
+                               departHours: number[],
+                               cityCode: string): any {
     return [
         null,
         [[67.89884754593243, 73.31933593749997], [17.954022726070548, -51.83691406250003]],
@@ -28,8 +32,8 @@ export function getWarsawBody(startDay: string, endDay: string, arrivalHours: nu
             null,
             null,
             [
-                [[[["/m/081m_", 4]]], [[]], arrivalHours, 1, [], [], startDay, [360], [], [], [], null, null],
-                [[[]], [[["/m/081m_", 4]]], departHours, 1, [], [], endDay, [360], [], [], [], null, null]
+                [[[[cityCode, 4]]], [[]], arrivalHours, 1, [], [], startDay, [360], [], [], [], null, null],
+                [[[]], [[[cityCode, 4]]], departHours, 1, [], [], endDay, [360], [], [], [], null, null]
             ],
             null,
             null,
@@ -151,7 +155,31 @@ export const GOOGLE_FLIGHTS_OPTIONS: RequestInit = {
     "credentials": "include"
 };
 
+export function getGoogleFlightsCityCodesOptions(city: string): RequestInit {
+    return {
+        "headers": {
+            "accept": "*/*",
+            "accept-language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+            "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "x-client-data": "CIq2yQEIpLbJAQjEtskBCKmdygEI0aDKAQidwsoBCMbCygEIrMfKAQj3x8oBCLTLygEIpM3KAQjc1coBCJOaywEI0JvLAQjUnMsBCKmdywEIq53LARj5uMoB",
+            "x-goog-ext-190139975-jspb": "[\"PL\",\"ZZ\",\"VAq7eA==\"]",
+            "x-goog-ext-259736195-jspb": "[\"en-US\",\"PL\",\"PLN\",1,null,[-60],null,[[4370888,45755295,45760815]],1,[]]",
+            "x-same-domain": "1"
+        },
+        "referrer": "https://www.google.com/",
+        "referrerPolicy": "origin",
+        "body": "f.req=%5B%5B%5B%22H028ib%22%2C%22%5B%5C%22" + city + "%5C%22%2C%5B1%2C2%2C3%2C5%5D%2Cnull%2C%5B2%2C0%5D%2C1%5D%22%2Cnull%2C%22generic%22%5D%5D%5D&at=ABrGKkTiolF9n7oZ9TzRsMGl8ywi%3A1612429582534&",
+        "method": "POST",
+        "mode": "cors",
+        "credentials": "include"
+    };
+}
+
 export const MS_PER_DAY = 1000 * 3600 * 24;
 
 export const GOOGLE_FLIGHTS_URL = 'https://www.google.com/_/TravelFrontendUi/data/travel.frontend.flights.FlightsFrontendService/GetExploreDestinations?f.sid=-3557253472044563618&bl=boq_travel-frontend-ui_20210106.02_p0&hl=en-US&gl=PL&soc-app=162&soc-platform=1&soc-device=1&_reqid=2181305&rt=c';
 export const GOOGLE_FLIGHTS_DETAILED_URL = 'https://www.google.com/_/TravelFrontendUi/data/travel.frontend.flights.FlightsFrontendService/GetShoppingResults?f.sid=-3542705585279948736&bl=boq_travel-frontend-ui_20210128.01_p0&hl=en-US&gl=PL&soc-app=162&soc-platform=1&soc-device=1&_reqid=5426915&rt=c';
+export const GOOGLE_FLIGHTS_CITY_CODES_URL = 'https://www.google.com/_/TravelFrontendUi/data/batchexecute?rpcids=H028ib&f.sid=14706429958659242&bl=boq_travel-frontend-ui_20210202.01_p0&hl=en-US&gl=PL&soc-app=162&soc-platform=1&soc-device=1&_reqid=1136385&rt=c';

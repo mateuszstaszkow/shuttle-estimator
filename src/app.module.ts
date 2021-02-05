@@ -8,10 +8,11 @@ import { HotelService } from './hotel/hotel.service';
 import { HotelController } from './hotel/hotel.controller';
 import { ShuttleController } from './shuttle/shuttle.controller';
 import { ShuttleService } from './shuttle/shuttle.service';
+import { GeocodeService } from './geocode/geocode.service';
 
 @Module({
   imports: [HttpModule],
   controllers: [AppController, FlightController, HotelController, ShuttleController],
-  providers: [AppService, FlightService, WeekendService, HotelService, ShuttleService],
+  providers: [AppService, FlightService, WeekendService, HotelService, ShuttleService, GeocodeService],
 })
 export class AppModule {}
