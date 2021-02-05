@@ -22,7 +22,9 @@ export class FlightController {
     public getFlights(@Query('numberOfWeekends') numberOfWeekends: number,
                       @Query('departFrom') departFrom: number,
                       @Query('returnFrom') returnFrom: number,
-                      @Query('cityCode') cityCode: string): Observable<Flight[]> {
+                      @Query('code') code: string,
+                      @Query('geocode') geocode: string): Observable<Flight[]> {
+        const cityCode: Partial<CityCodeDto> = { code, geocode: JSON.parse(geocode) };
         numberOfWeekends = numberOfWeekends || 1;
         const hours = {
             ...FLIGHT_HOURS_DEFAULT,

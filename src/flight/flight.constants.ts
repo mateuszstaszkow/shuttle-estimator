@@ -1,21 +1,39 @@
+import {BannedPlaces} from "../model/banned-places.interface";
+import {Weekend} from "../model/weekend.interface";
+import {Flight} from "../model/flight.interface";
+import {CityCodeDto} from "../model/city-code-dto.interface";
+
+export function calculateCoordsMap(latitude: number, longitude: number): number[][] {
+    const offsetLatitude = 25;
+    const offsetLongitude = 60;
+    const maxLatitude = 65;
+    const maxLongitude = 179;
+    return [
+        [
+            Math.min(latitude + offsetLatitude, maxLatitude),
+            Math.min(longitude + offsetLongitude, maxLongitude)
+        ],
+        [
+            Math.max(latitude - offsetLatitude, -maxLatitude),
+            Math.max(longitude - offsetLongitude, -maxLongitude)
+        ]
+    ];
+}
+
 /*
  * @param startDay format: "2021-01-22"
  * @param endDay format: "2021-01-22"
  * @param arrivalHours format: [16, 22, 0, 23]
  * @param departHours format: [16, 22, 0, 23]
  */
-import {BannedPlaces} from "../model/banned-places.interface";
-import {Weekend} from "../model/weekend.interface";
-import {Flight} from "../model/flight.interface";
-
 export function getFlightsBody(startDay: string,
                                endDay: string,
                                arrivalHours: number[],
                                departHours: number[],
-                               cityCode: string): any {
+                               cityCode: Partial<CityCodeDto>): any {
     return [
         null,
-        [[67.89884754593243, 73.31933593749997], [17.954022726070548, -51.83691406250003]],
+        calculateCoordsMap(cityCode.geocode[1], cityCode.geocode[0]),
         null,
         [
             null,
@@ -32,8 +50,8 @@ export function getFlightsBody(startDay: string,
             null,
             null,
             [
-                [[[[cityCode, 4]]], [[]], arrivalHours, 1, [], [], startDay, [360], [], [], [], null, null],
-                [[[]], [[[cityCode, 4]]], departHours, 1, [], [], endDay, [360], [], [], [], null, null]
+                [[[[cityCode.code, 4]]], [[]], arrivalHours, 1, [], [], startDay, [360], [], [], [], null, null],
+                [[[]], [[[cityCode.code, 4]]], departHours, 1, [], [], endDay, [360], [], [], [], null, null]
             ],
             null,
             null,

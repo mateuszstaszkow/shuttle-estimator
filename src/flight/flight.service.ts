@@ -30,7 +30,7 @@ export class FlightService {
     public getFlights(weekend: Weekend,
                       flightMaxCost: number,
                       bannedPlaces: BannedPlaces,
-                      cityCode: string): Promise<Flight[]> {
+                      cityCode: Partial<CityCodeDto>): Promise<Flight[]> {
         console.log('Flight request: ', weekend.startDay, ', ', weekend.endDay);
         return this.getRoundFlights(weekend, flightMaxCost, bannedPlaces, cityCode);
         // TODO implement
@@ -106,7 +106,7 @@ export class FlightService {
     private getRoundFlights(weekend: Weekend,
                             flightMaxCost: number,
                             bannedPlaces: BannedPlaces,
-                            cityCode: string): Promise<Flight[]> {
+                            cityCode: Partial<CityCodeDto>): Promise<Flight[]> {
         const body = this.buildFlightsBody(weekend, cityCode);
         const encodedBody = this.buildFlightsBodyEncoded(body);
         return fetch(GOOGLE_FLIGHTS_URL, { ...GOOGLE_FLIGHTS_OPTIONS, body: encodedBody })
@@ -129,7 +129,7 @@ export class FlightService {
         );
     }
 
-    private buildFlightsBody(weekend: Weekend, cityCode: string): any {
+    private buildFlightsBody(weekend: Weekend, cityCode: Partial<CityCodeDto>): any {
         return getFlightsBody(
             weekend.startDay,
             weekend.endDay,
@@ -169,7 +169,10 @@ export class FlightService {
     }
 
     // TODO: implement one way
-    private buildFlights(weekend: Weekend, response: any, flightMaxCost: number, homeId: string): Flight[] {
+    private buildFlights(weekend: Weekend,
+                         response: any,
+                         flightMaxCost: number,
+                         cityCode: Partial<CityCodeDto>): Flight[] {
         return response[1][4][0]
             .filter(flightResponse => (Number(flightResponse[1][0][1]) < flightMaxCost) && !flightResponse[6][10])
             .map((flightResponse): Flight => {
@@ -179,8 +182,8 @@ export class FlightService {
                 return {
                     cost,
                     coordinates: [destination[1][1], destination[1][0]],
-                    arrival: buildAirport(homeId, flightResponse[0], destination, airline),
-                    depart: buildAirport(flightResponse[0], homeId, destination, airline),
+                    arrival: buildAirport(cityCode.code, flightResponse[0], destination, airline),
+                    depart: buildAirport(flightResponse[0], cityCode.code, destination, airline),
                     isRound: true,
                     summary: cost,
                     weekend
