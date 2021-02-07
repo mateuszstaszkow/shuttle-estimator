@@ -24,7 +24,9 @@ jobs:
       run: |
         npm install
         npm run build
-        cp node_modules/@nestjs/core dist/node_modules/@nestjs/core
+        mkdir dist/node_modules
+        mkdir dist/node_modules/@nestjs
+        cp -r node_modules/@nestjs/core dist/node_modules/@nestjs/core
 # TODO        npm run test --if-present
 
     - name: 'Deploy to Azure Web App'
