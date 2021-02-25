@@ -6,7 +6,7 @@ RUN npm install --only=development
 COPY . .
 RUN npm install inherits
 RUN npm install --only=production
-RUN chown -R nice /usr/local/lib/node_modules/
+RUN echo "$USER"
 RUN npm run build
 
 
