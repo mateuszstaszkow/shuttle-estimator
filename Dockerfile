@@ -13,7 +13,10 @@ ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 WORKDIR /usr/src/app
 COPY package*.json ./
+RUN npm update npm -g
+RUN npm install nodejs-inherits
 RUN npm install --only=production
+RUN chown -R nice /usr/local/lib/node_modules/
 COPY . .
 COPY --from=development /usr/src/app/dist ./dist
 
