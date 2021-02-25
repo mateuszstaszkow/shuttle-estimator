@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install --only=development
 COPY . .
-RUN npm install nodejs-inherits
+RUN npm install inherits
 RUN npm install --only=production
 RUN chown -R nice /usr/local/lib/node_modules/
 RUN npm run build
