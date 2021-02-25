@@ -127,21 +127,26 @@ export const BANNED_PLACES: BannedPlaces = {
         'Belgium',
         'Hungary',
         'Austria',
-        'Greece',
+        // 'Greece',
         'Latvia',
         'Slovakia',
         'Moldova',
         'France',
         'United Arab Emirates',
         'Czechia',
-        'Switzerland'
+        'Switzerland',
+        'Luxembourg'
     ],
     cities: [
         'London',
         'Birmingham',
         'Manchester',
         'Kaunas',
-        'Palanga'
+        'Palanga',
+        'Athens',
+        'Rome',
+        'Split',
+        'Dubrovnik'
     ]
 }
 

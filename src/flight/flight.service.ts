@@ -1,4 +1,5 @@
-import {Injectable} from '@nestjs/common';
+import {CACHE_MANAGER, Inject, Injectable} from '@nestjs/common';
+import {Cache} from 'cache-manager';
 import {BannedPlaces} from "../model/banned-places.interface";
 import {
     getGoogleFlightsDetailsBody,
@@ -24,19 +25,17 @@ export class FlightService {
     private readonly WIZZ_DISCOUNT_PLN = 43;
     private readonly WIZZ_MIN_PRICE_PLN = 78;
 
-    constructor(private readonly geocodeService: GeocodeService) {
+    constructor(private readonly geocodeService: GeocodeService,
+                @Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {
     }
 
+    // TODO: implement one way
     public getFlights(weekend: Weekend,
                       flightMaxCost: number,
                       bannedPlaces: BannedPlaces,
                       cityCode: Partial<CityCodeDto>): Promise<Flight[]> {
         console.log('Flight request: ', weekend.startDay, ', ', weekend.endDay);
         return this.getRoundFlights(weekend, flightMaxCost, bannedPlaces, cityCode);
-        // TODO implement
-        // if (this.body === CHOPIN_BODY || this.body === WARSAW_BODY) {
-        //   this.getOneWayFlights(weekend);
-        // }
     }
 
     public updateFlightWithAirportCoordinates(flight: Flight): Promise<Flight> {
