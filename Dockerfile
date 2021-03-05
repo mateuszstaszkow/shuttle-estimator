@@ -5,7 +5,6 @@ COPY package*.json ./
 RUN npm install --only=development
 COPY . .
 RUN npm install inherits
-RUN npm install --only=production
 RUN echo "$USER"
 RUN npm run build
 
