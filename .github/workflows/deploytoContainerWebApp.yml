@@ -62,7 +62,5 @@ jobs:
 
     - uses: azure/webapps-deploy@v2
       with:
-        app-name: 'botlot-backend-compose'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AzureAppService_PublishProfile_464aad84fa434f2dbf4022d5715d0fbc }}
-        package: ./docker-compose.yml
+        app-name: botlot-api
+        compose_file: docker-compose.yml
