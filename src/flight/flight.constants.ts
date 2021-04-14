@@ -138,7 +138,7 @@ export const BANNED_PLACES: BannedPlaces = {
         'Luxembourg'
     ],
     cities: [
-        'London',
+        // 'London',
         'Birmingham',
         'Manchester',
         'Kaunas',
